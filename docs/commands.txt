@@ -1,0 +1,7 @@
+This command will run the file that will install the ingress.
+./files/ingress_install.sh
+
+
+
+Test that MTLS is working
+ curl -k https://$nginx_ingress/ --cert ./client-cert.pem --key ./client-key.pem

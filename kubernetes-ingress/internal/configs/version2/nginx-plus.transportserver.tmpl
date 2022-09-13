@@ -1,0 +1,51 @@
+{{ range $u := .Upstreams }}
+upstream {{ $u.Name }} {
+    zone {{ $u.Name }} 256k;
+
+    random two least_conn;
+
+    {{ range $s := $u.Servers }}
+    server {{ $s.Address }} max_fails={{ $s.MaxFails }} fail_timeout={{ $s.FailTimeout }};
+    {{ end }}
+}
+{{ end }}
+
+{{ $s := .Server }}
+server {
+    {{ if $s.TLSPassthrough }}
+    listen {{ $s.UnixSocket }} proxy_protocol;
+    set_real_ip_from unix:;
+    {{ else }}
+    listen {{ $s.Port }}{{ if $s.UDP }} udp{{ end }};
+    {{ end }}
+
+    status_zone {{ $s.StatusZone }};
+
+    {{ if $s.ProxyRequests }}
+    proxy_requests {{ $s.ProxyRequests }};
+    {{ end }}
+    {{ if $s.ProxyResponses }}
+    proxy_responses {{ $s.ProxyResponses }};
+    {{ end }}
+
+    {{ range $snippet := $s.Snippets }}
+    {{- $snippet }}
+    {{ end }}
+
+    proxy_pass {{ $s.ProxyPass }};
+
+    {{ if $s.HealthCheck }}
+    health_check interval={{ $s.HealthCheck.Interval }} port={{ $s.HealthCheck.Port }} 
+        passes={{ $s.HealthCheck.Passes }} jitter={{ $s.HealthCheck.Jitter }} fails={{ $s.HealthCheck.Fails }} {{ if $s.UDP }}udp{{ end }};
+    health_check_timeout {{ $s.HealthCheck.Timeout }};
+    {{ end }}
+
+    proxy_timeout {{ $s.ProxyTimeout }};
+    proxy_connect_timeout {{ $s.ProxyConnectTimeout }};
+
+    {{ if $s.ProxyNextUpstream }}
+    proxy_next_upstream on;
+    proxy_next_upstream_timeout {{ $s.ProxyNextUpstreamTimeout }};
+    proxy_next_upstream_tries {{ $s.ProxyNextUpstreamTries }};
+    {{ end }}
+}

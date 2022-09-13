@@ -1,0 +1,38 @@
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - 'docs-web/**'
+      - 'examples/**'
+      - 'examples-of-custom-resources/**'
+      - '**.md'
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GOLANGCI_VERSION: 1.32
+  GOLANGCI_TIMEOUT: 10m0s
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Lint Code
+        uses: golangci/golangci-lint-action@v2.5.1
+        with:
+          version: 'v${{ env.GOLANGCI_VERSION }}'
+          args: --timeout ${{ env.GOLANGCI_TIMEOUT }}
